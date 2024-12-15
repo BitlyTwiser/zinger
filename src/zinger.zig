@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const ClassData = struct { status: std.http.Status.Class = .success, phrase: []const u8 = "" };
+
 const method = union(enum) {
     get,
     post,
@@ -35,6 +37,7 @@ pub const Zinger = struct {
     allocator: Allocator,
     client: std.http.Client,
     body: std.ArrayList(u8),
+    class_data: ClassData = .{},
 
     pub fn init(allocator: Allocator) Self {
         const c = std.http.Client{ .allocator = allocator };
@@ -50,21 +53,21 @@ pub const Zinger = struct {
         self.body.deinit();
     }
 
-    pub fn delete(self: *Self, url: []const u8, headers: []std.http.Header) !std.http.Client.FetchResult {
+    pub fn delete(self: *Self, url: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, null, headers, .delete);
     }
 
     /// Blocking
-    pub fn get(self: *Self, url: []const u8, headers: []std.http.Header) !std.http.Client.FetchResult {
+    pub fn get(self: *Self, url: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, null, headers, .get);
     }
 
-    pub fn get_with_body(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !std.http.Client.FetchResult {
+    pub fn get_with_body(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .get);
     }
 
     /// Blocking
-    pub fn post(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !std.http.Client.FetchResult {
+    pub fn post(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .post);
     }
 
@@ -72,7 +75,7 @@ pub const Zinger = struct {
         return self.base_http_req(url, body, headers, .put);
     }
 
-    pub fn base_http_req(self: *Self, url: ?[]const u8, body: []const u8, headers: []std.http.Header, method_type: method) !std.http.Client.FetchResult {
+    pub fn base_http_req(self: *Self, url: []const u8, body: ?[]const u8, headers: []std.http.Header, method_type: method) !Zinger {
         const fetch_options = std.http.Client.FetchOptions{
             .location = std.http.Client.FetchOptions.Location{
                 .url = url,
@@ -84,7 +87,13 @@ pub const Zinger = struct {
         };
 
         const res = try self.client.fetch(fetch_options);
-        return res;
+
+        self.class_data = ClassData{
+            .phrase = res.status.phrase() orelse "response from server was blank",
+            .status = res.status.class(),
+        };
+
+        return self.*;
     }
 
     // Make a more generic function using an enum to denote which method should be used. For the generic elemetns we can include all with _j or not depending since in theory, you could send a JSON body on delete request
@@ -102,6 +111,21 @@ pub const Zinger = struct {
         const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{});
 
         return parsed_body.value;
+    }
+
+    /// Used to check for any returned errors from the network request. resp.status.class() enum can also be checked for .success
+    pub fn err(self: Self) ?ClassData {
+        if (self.class_data.status != .success) {
+            return self.class_data;
+        }
+
+        return null;
+    }
+
+    // Writes stored error data from a non-successful client connection
+    pub fn printErr(self: Self) !void {
+        const outw = std.io.getStdOut().writer();
+        try outw.print("{s}", .{self.class_data.phrase});
     }
 };
 
@@ -157,7 +181,8 @@ test test_post {
     defer req.allocator.free(body);
 
     if (resp.status.class() != .success) {
-        std.debug.print("Yo the request died bro\n", .{});
+        resp.status
+            .std.debug.print("Yo the request died bro\n", .{});
     }
 
     const parsed_body = try std.json.parseFromSlice(test_resp, allocator, body, .{});
