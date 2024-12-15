@@ -9,7 +9,7 @@ pub fn main() !void {
 
     var headers = [_]std.http.Header{};
 
-    const resp = try z.get("", &headers);
+    const resp = try z.get("192.168.50.71:3000/zinger-test", null, &headers);
 
     if (resp.err()) |err_data| {
         std.debug.print("{s}", .{err_data.phrase});

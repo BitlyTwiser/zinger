@@ -1,6 +1,10 @@
 const std = @import("std");
 
-pub const ClassData = struct { status: std.http.Status.Class = .success, phrase: []const u8 = "" };
+pub const ClassData = struct {
+    status: std.http.Status.Class = .success,
+    phrase: []const u8 = "",
+    raw: ?std.http.Client.FetchResult = null, // Used to store the raw response in case users wish to deal with this diretly (in the case of a SOAP endpoint etc.. which we do not handle)
+};
 
 const method = union(enum) {
     get,
@@ -57,16 +61,14 @@ pub const Zinger = struct {
         return self.base_http_req(url, null, headers, .delete);
     }
 
-    /// Blocking
-    pub fn get(self: *Self, url: []const u8, headers: []std.http.Header) !Zinger {
-        return self.base_http_req(url, null, headers, .get);
+    pub fn get(self: *Self, url: []const u8, body: ?[]const u8, headers: []std.http.Header) !Zinger {
+        return self.base_http_req(url, body, headers, .get);
     }
 
     pub fn get_with_body(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .get);
     }
 
-    /// Blocking
     pub fn post(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .post);
     }
@@ -91,26 +93,10 @@ pub const Zinger = struct {
         self.class_data = ClassData{
             .phrase = res.status.phrase() orelse "response from server was blank",
             .status = res.status.class(),
+            .raw = res,
         };
 
         return self.*;
-    }
-
-    // Make a more generic function using an enum to denote which method should be used. For the generic elemetns we can include all with _j or not depending since in theory, you could send a JSON body on delete request
-
-    // Fills the incoming struct with the returned data from the POST request and returns the T type.
-    pub fn post_j(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header, data: anytype) !data {
-        const post_resp = try self.post(url, body, headers);
-
-        if (post_resp.status.class() != .success) {
-            // Do Something, perhaps add an error field and write to that?
-        }
-
-        const req_body = try self.body.toOwnedSlice();
-
-        const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{});
-
-        return parsed_body.value;
     }
 
     /// Used to check for any returned errors from the network request. resp.status.class() enum can also be checked for .success
@@ -126,6 +112,15 @@ pub const Zinger = struct {
     pub fn printErr(self: Self) !void {
         const outw = std.io.getStdOut().writer();
         try outw.print("{s}", .{self.class_data.phrase});
+    }
+
+    // Converts the respons body to JSON of any request (Except delete - delete always expects an empty body to be present)
+    pub fn json(self: Self, data: anytype) !data {
+        const req_body = try self.body.toOwnedSlice();
+
+        const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{});
+
+        return parsed_body.value;
     }
 };
 
@@ -156,39 +151,19 @@ test test_post_json {
 
     var headers = [_]std.http.Header{.{ .name = "content-type", .value = "application/json" }};
 
-    const data = try req.post_j("http://192.168.1.71:3000/test", json_post, &headers, test_resp);
+    const resp = try req.post("http://192.168.50.71:3000/zinger-test", json_post, &headers);
 
-    std.debug.print("I have returned from the post {s}", .{data.words});
-}
+    if (resp.err()) |err| {
+        std.debug.print("error in POST request: {s}", .{err.phrase});
 
-test test_post {
-    const allocator = std.heap.page_allocator;
-    var req = Zinger.init(allocator);
-
-    defer req.deinit();
-
-    const test_request = test_req{
-        .field1 = "Testing words",
-    };
-
-    const json_post = try std.json.stringifyAlloc(allocator, test_request, .{});
-    defer allocator.free(json_post);
-
-    var headers = [_]std.http.Header{.{ .name = "content-type", .value = "application/json" }};
-
-    const resp = try req.post("http://192.168.1.71:3000/test", json_post, &headers);
-    const body = try req.body.toOwnedSlice();
-    defer req.allocator.free(body);
-
-    if (resp.status.class() != .success) {
-        resp.status
-            .std.debug.print("Yo the request died bro\n", .{});
+        return;
     }
 
-    const parsed_body = try std.json.parseFromSlice(test_resp, allocator, body, .{});
-
-    std.debug.print("Rquest body in string form: {s}\n", .{parsed_body.value.words});
+    const json_resp = try resp.json(test_resp);
+    std.debug.print("{any}", .{json_resp});
 }
+
+test test_post {}
 
 test "test get" {
     const allocator = std.heap.page_allocator;
