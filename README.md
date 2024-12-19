@@ -5,8 +5,18 @@
 # Zinger
 A Simple HTTP request library 
 
+# Contents
+[Usage](#usage) |
+[Make Requests](#make-requests) |
+[GET](#get) |
+[POST](#post) |
+[PUT and DELETE](#put-and-delete) |
+[Supported Requests](#supports) |
 
-## Usage:
+</div>
+
+
+## Usage
 Add Zinger to your Zig project with Zon:
 
 ```
@@ -26,7 +36,7 @@ const zinger = @import("zinger").Zinger;
 
 Please see the examples in the main.zig file or below to view using the package 
 
-## Make requests:
+## Make requests
 Any of the requsts can be made with a body utilizing the optional values. Additionally, any body can be converted to JSON by utilizing the anytype passed into the `json` function call.
 
 The example in main shows how to make a request and check for errors in the query
@@ -52,7 +62,7 @@ The example in main shows how to make a request and check for errors in the quer
 
 This is the most *basic* example there is for curating requests. A simple get request, but otherwiese does not display anything as we pass in a null body. (Perhaps useful if all you want to check is the status of the response which is done in the resp.err() check)
 
-## GET with a body and JSON serialization:
+## GET
 ```
     const allocator = std.heap.page_allocator;
     var z = zinger.Zinger.init(allocator);
@@ -76,7 +86,7 @@ This is the most *basic* example there is for curating requests. A simple get re
     std.debug.print("{any}", .{json_resp});
 ```
 
-## POST with a body and JSON serialization:
+## POST
 You can denote whatever type you want for the JSON data in a custom struct
 ```
 const test_resp_type = struct {
@@ -120,7 +130,7 @@ fn post(allocator: std.mem.Allocator) !void {
 }
 ```
 
-## PUT and DELETE:
+## PUT and DELETE
  Following the same pattern above, you *can* unclude a body as part of the DELETE/PUT requests. The library is really designed around however the user wants to present the data, attempting to make it as simple as possible to make all the general requests you need.
 
  For PUT/DELETE, simply change the HTTP verb in the above examples and you are set!
@@ -185,6 +195,6 @@ fn put(allocator: std.mem.Allocator) !void {
  ```
 
 
-# Supports:
+# Supports
 GET, POST, PUT, and DELETE requests
 
