@@ -6,6 +6,20 @@
 A Simple HTTP request library 
 
 
+## Usage:
+Add Zinger to your Zig project with Zon:
+
+```
+zig fetch --save https://github.com/BitlyTwiser/zinger/archive/refs/tags/v0.1.0.tar.gz
+```
+
+Add the following to build.zig file:
+```
+    const zinger = b.dependency("zinger", .{});
+    exe.root_module.addImport("zinger", snek.module("zinger"));
+```
+
+
 ## Make requests:
 Any of the requsts can be made with a body utilizing the optional values. Additionally, any body can be converted to JSON by utilizing the anytype passed into the `json` function call.
 
