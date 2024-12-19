@@ -26,7 +26,7 @@ zig fetch --save https://github.com/BitlyTwiser/zinger/archive/refs/tags/v0.1.0.
 Add the following to build.zig file:
 ```
     const zinger = b.dependency("zinger", .{});
-    exe.root_module.addImport("zinger", snek.module("zinger"));
+    exe.root_module.addImport("zinger", zinger.module("zinger"));
 ```
 
 Import Zinger and you should be set!
