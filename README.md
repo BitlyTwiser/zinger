@@ -19,6 +19,12 @@ Add the following to build.zig file:
     exe.root_module.addImport("zinger", snek.module("zinger"));
 ```
 
+Import Zinger and you should be set!
+```
+const zinger = @import("zinger").Zinger;
+```
+
+Please see the examples in the main.zig file or below to view using the package 
 
 ## Make requests:
 Any of the requsts can be made with a body utilizing the optional values. Additionally, any body can be converted to JSON by utilizing the anytype passed into the `json` function call.
