@@ -1,8 +1,12 @@
-# zinger
-A Simple HTTP request library in/for Zig
+<div align="center"> 
+
+<img src="/assets/zinger.jpg" width="450" height="500">
+
+# Zinger
+A Simple HTTP request library 
 
 
-# Make requests:
+## Make requests:
 Any of the requsts can be made with a body utilizing the optional values. Additionally, any body can be converted to JSON by utilizing the anytype passed into the `json` function call.
 
 The example in main shows how to make a request and check for errors in the query
@@ -101,12 +105,63 @@ fn post(allocator: std.mem.Allocator) !void {
 
  For PUT/DELETE, simply change the HTTP verb in the above examples and you are set!
 
- PUT:
+ PUT/DELETE:
  ```
- ```
+ fn delete(allocator: std.mem.Allocator) !void {
+    // Create Zinger instance for POST
+    var z = zinger.Zinger.init(allocator);
 
- DELETE:
- ```
+    const test_data = struct {
+        example_string: []const u8,
+    }{
+        .example_string = "testing",
+    };
+
+    const json_body = try std.json.stringifyAlloc(allocator, test_data, .{});
+    defer allocator.free(json_body);
+
+    var headers = [_]std.http.Header{.{ .name = "content-type", .value = "application/json" }};
+
+    var resp = try z.delete("<api endpoint>", json_body, &headers);
+
+    if (resp.err() != null) {
+        try resp.printErr();
+
+        return;
+    }
+
+    // Serialize the JSON data from the body using the json(anytype) method.
+    const json_resp = try resp.json(test_resp_type);
+    std.debug.print("{any}", .{json_resp});
+}
+
+fn put(allocator: std.mem.Allocator) !void {
+    // Create Zinger instance for POST
+    var z = zinger.Zinger.init(allocator);
+
+    const test_data = struct {
+        example_string: []const u8,
+    }{
+        .example_string = "testing",
+    };
+
+    const json_body = try std.json.stringifyAlloc(allocator, test_data, .{});
+    defer allocator.free(json_body);
+
+    var headers = [_]std.http.Header{.{ .name = "content-type", .value = "application/json" }};
+
+    var resp = try z.put("<api endpoint>", json_body, &headers);
+
+    if (resp.err()) |err_data| {
+        std.debug.print("{s}", .{err_data.phrase});
+
+        return;
+    }
+
+    // Serialize the JSON data from the body using the json(anytype) method.
+    const json_resp = try resp.json(test_resp_type);
+    std.debug.print("{any}", .{json_resp});
+}
  ```
 
 
