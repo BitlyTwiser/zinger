@@ -57,15 +57,11 @@ pub const Zinger = struct {
         self.body.deinit();
     }
 
-    pub fn delete(self: *Self, url: []const u8, headers: []std.http.Header) !Zinger {
-        return self.base_http_req(url, null, headers, .delete);
+    pub fn delete(self: *Self, url: []const u8, body: ?[]const u8, headers: []std.http.Header) !Zinger {
+        return self.base_http_req(url, body, headers, .delete);
     }
 
     pub fn get(self: *Self, url: []const u8, body: ?[]const u8, headers: []std.http.Header) !Zinger {
-        return self.base_http_req(url, body, headers, .get);
-    }
-
-    pub fn get_with_body(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .get);
     }
 
@@ -73,7 +69,7 @@ pub const Zinger = struct {
         return self.base_http_req(url, body, headers, .post);
     }
 
-    pub fn put(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !std.http.Client.FetchResult {
+    pub fn put(self: *Self, url: []const u8, body: []const u8, headers: []std.http.Header) !Zinger {
         return self.base_http_req(url, body, headers, .put);
     }
 
@@ -115,7 +111,7 @@ pub const Zinger = struct {
     }
 
     // Converts the respons body to JSON of any request (Except delete - delete always expects an empty body to be present)
-    pub fn json(self: Self, data: anytype) !data {
+    pub fn json(self: *Self, data: anytype) !data {
         const req_body = try self.body.toOwnedSlice();
 
         const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{});
@@ -164,23 +160,3 @@ test test_post_json {
 }
 
 test test_post {}
-
-test "test get" {
-    const allocator = std.heap.page_allocator;
-
-    var req = Zinger.init(allocator);
-    defer req.deinit();
-
-    var headers = [_]std.http.Header{.{}};
-
-    const resp = try req.get("", &headers);
-
-    if (resp.status.class() == .success) {
-        for (req.body.items) |item| {
-            std.debug.print("Response body item: {s}", .{item});
-        }
-    }
-
-    // or convert into JSON if you know the expected type
-    // std.json.parseFromSlice(comptime T: type, allocator: Allocator, s: []const u8, options: ParseOptions)
-}
