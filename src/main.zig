@@ -12,7 +12,7 @@ pub fn main() !void {
 // Here is a roster of examples
 fn get(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for GET
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     defer z.deinit();
 
@@ -40,7 +40,7 @@ const test_resp_type = struct {
 
 fn post(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, 1024 * 2);
 
     const test_data = struct {
         example_string: []const u8,
@@ -68,7 +68,7 @@ fn post(allocator: std.mem.Allocator) !void {
 
 fn delete(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     const test_data = struct {
         example_string: []const u8,
@@ -96,7 +96,7 @@ fn delete(allocator: std.mem.Allocator) !void {
 
 fn put(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     const test_data = struct {
         example_string: []const u8,

@@ -42,14 +42,11 @@ pub const Zinger = struct {
     client: std.http.Client,
     body: std.ArrayList(u8),
     class_data: ClassData = .{},
+    max_append_size: ?usize,
 
-    pub fn init(allocator: Allocator) Self {
+    pub fn init(allocator: Allocator, max_append_size: ?usize) Self {
         const c = std.http.Client{ .allocator = allocator };
-        return Self{
-            .allocator = allocator,
-            .client = c,
-            .body = std.ArrayList(u8).init(allocator),
-        };
+        return Self{ .allocator = allocator, .client = c, .body = std.ArrayList(u8).init(allocator), .max_append_size = max_append_size };
     }
 
     pub fn deinit(self: *Self) void {
@@ -82,6 +79,7 @@ pub const Zinger = struct {
             .method = method_type.method_type(),
             .payload = body,
             .response_storage = .{ .dynamic = &self.body },
+            .max_append_size = self.max_append_size,
         };
 
         const res = try self.client.fetch(fetch_options);
@@ -113,8 +111,8 @@ pub const Zinger = struct {
     // Converts the respons body to JSON of any request (Except delete - delete always expects an empty body to be present)
     pub fn json(self: *Self, data: anytype) !data {
         const req_body = try self.body.toOwnedSlice();
-
-        const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{});
+        // Allows for ignoring of unknown fields to avoid errors, allowing users to capture whatever fields are present in the struct
+        const parsed_body = try std.json.parseFromSlice(data, self.allocator, req_body, .{ .ignore_unknown_fields = true });
 
         return parsed_body.value;
     }
