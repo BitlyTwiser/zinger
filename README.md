@@ -20,7 +20,7 @@ A Simple HTTP request library
 Add Zinger to your Zig project with Zon:
 
 ```
-zig fetch --save https://github.com/BitlyTwiser/zinger/archive/refs/tags/v0.1.0.tar.gz
+zig fetch --save https://github.com/BitlyTwiser/zinger/archive/refs/tags/v0.1.1.tar.gz
 ```
 
 Add the following to build.zig file:
