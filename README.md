@@ -41,9 +41,22 @@ Any of the requsts can be made with a body utilizing the optional values. Additi
 
 The example in main shows how to make a request and check for errors in the query
 
+### max_append_size
+Note: The std.http.Client.FetchOptions, by default, sets a max body size (if not defined) to: ``` 2 * 1024 * 1024```.
+If this is enough for your use cases (most general HTTP requests with a smaller JSON body would fit within this allotment), then everything is fine. Overwise, you will need to pass in the alloted/desired amount into Zinger init.
+
+Example:
+```
+ var z = zinger.Zinger.init(allocator, null);
+
+ OR
+
+  var z = zinger.Zinger.init(allocator, 1024 * 10); // The numerical value here should be carefully considered to avoid over allocation.
+```
+
 ```
     const allocator = std.heap.page_allocator;
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     defer z.deinit();
 
@@ -65,7 +78,7 @@ This is the most *basic* example there is for curating requests. A simple get re
 ## GET
 ```
     const allocator = std.heap.page_allocator;
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, 1024 * 2 * 2);
 
     defer z.deinit();
 
@@ -97,7 +110,7 @@ const test_resp_type = struct {
 ```
 fn post(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     const test_data = struct {
         example_string: []const u8,
@@ -139,7 +152,7 @@ fn post(allocator: std.mem.Allocator) !void {
  ```
  fn delete(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, 2048 * 10); // The value for the max_override here is just symbolic for reference, this would generally be null unless you *need* to override this value 
 
     const test_data = struct {
         example_string: []const u8,
@@ -167,7 +180,7 @@ fn post(allocator: std.mem.Allocator) !void {
 
 fn put(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator);
+    var z = zinger.Zinger.init(allocator, null);
 
     const test_data = struct {
         example_string: []const u8,
