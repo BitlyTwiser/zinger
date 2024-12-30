@@ -19,18 +19,18 @@ A Simple HTTP request library
 ## Usage
 Add Zinger to your Zig project with Zon:
 
-```
+```sh
 zig fetch --save https://github.com/BitlyTwiser/zinger/archive/refs/tags/v0.1.1.tar.gz
 ```
 
 Add the following to build.zig file:
-```
+```zig
     const zinger = b.dependency("zinger", .{});
     exe.root_module.addImport("zinger", zinger.module("zinger"));
 ```
 
 Import Zinger and you should be set!
-```
+```zig
 const zinger = @import("zinger").Zinger;
 ```
 
@@ -46,15 +46,16 @@ Note: The std.http.Client.FetchOptions, by default, sets a max body size (if not
 If this is enough for your use cases (most general HTTP requests with a smaller JSON body would fit within this allotment), then everything is fine. Overwise, you will need to pass in the alloted/desired amount into Zinger init.
 
 Example:
-```
+```zig
  var z = zinger.Zinger.init(allocator, null);
 
- OR
+ // OR
 
-  var z = zinger.Zinger.init(allocator, 1024 * 10); // The numerical value here should be carefully considered to avoid over allocation.
+// The numerical value here should be carefully considered to avoid over allocation.
+var z = zinger.Zinger.init(allocator, 1024 * 10);
 ```
 
-```
+```zig
     const allocator = std.heap.page_allocator;
     var z = zinger.Zinger.init(allocator, null);
 
@@ -76,7 +77,7 @@ Example:
 This is the most *basic* example there is for curating requests. A simple get request, but otherwiese does not display anything as we pass in a null body. (Perhaps useful if all you want to check is the status of the response which is done in the resp.err() check)
 
 ## GET
-```
+```zig
     const allocator = std.heap.page_allocator;
     var z = zinger.Zinger.init(allocator, 1024 * 2 * 2);
 
@@ -95,19 +96,21 @@ This is the most *basic* example there is for curating requests. A simple get re
     }
 
     // Serialize the JSON data from the body using the json(anytype) method.
-    const json_resp = try resp.json(test_resp_type); // Pass any struct type here to marshal the body into the struct. Obviously, ensure that the struct attributes match the returned JSON data from the endpoint
+    // Pass any struct type here to marshal the body into the struct.
+    //    Obviously, ensure that the struct attributes match the returned JSON data from the endpoint
+    const json_resp = try resp.json(test_resp_type);
     std.debug.print("{any}", .{json_resp});
 ```
 
 ## POST
 You can denote whatever type you want for the JSON data in a custom struct
-```
+```zig
 const test_resp_type = struct {
     test_data: []const u8,
 };
 ```
 
-```
+```zig
 fn post(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
     var z = zinger.Zinger.init(allocator, null);
@@ -149,10 +152,12 @@ fn post(allocator: std.mem.Allocator) !void {
  For PUT/DELETE, simply change the HTTP verb in the above examples and you are set!
 
  PUT/DELETE:
- ```
+ ```zig
  fn delete(allocator: std.mem.Allocator) !void {
     // Create Zinger instance for POST
-    var z = zinger.Zinger.init(allocator, 2048 * 10); // The value for the max_override here is just symbolic for reference, this would generally be null unless you *need* to override this value 
+    // The value for the max_override here is just symbolic for reference,
+    //   this would generally be null unless you *need* to override this value 
+    var z = zinger.Zinger.init(allocator, 2048 * 10);
 
     const test_data = struct {
         example_string: []const u8,
